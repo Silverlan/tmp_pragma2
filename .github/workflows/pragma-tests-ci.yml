@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - os: ${{ github.event.inputs.os == 'windows' && 'windows-latest' || 'ubuntu-24.04' }}
+          - os: ${{ inputs.os == 'windows' && 'windows-latest' || 'ubuntu-24.04' }}
 
     steps:
     - name: Set Initial Workflow Status
