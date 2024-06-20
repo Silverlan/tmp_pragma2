@@ -42,6 +42,12 @@ jobs:
             generators: "Visual Studio 17 2022"
             build_dir: 'build'
     steps:
+      - name: Test
+        uses: Silverlan/tmp_pragma2/.github/workflows/pragma-tests-ci.yml@main
+        if: github.repository != 'Silverlan/pr_module_template'
+        with:
+          os: windows
+
       - name: Setup Pragma
         uses: Silverlan/pragma/github_actions/setup@main
         with:
