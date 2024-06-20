@@ -1,4 +1,5 @@
 name: Run Tests - Windows
+on:
   workflow_run:
     workflows: ["Build Windows"]
     types: 
