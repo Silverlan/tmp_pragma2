@@ -1,0 +1,12 @@
+name: Run Tests - Windows
+  workflow_run:
+    workflows: ["Build Windows"]
+    types: 
+      - completed
+
+jobs:
+  test:
+    uses: Silverlan/tmp_pragma2/.github/workflows/pragma-tests-ci.yml@main
+    if: github.repository != 'Silverlan/pr_module_template'
+    with:
+      os: windows

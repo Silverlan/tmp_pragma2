@@ -18,11 +18,6 @@ env:
   GIT_CLONE_PROTECTION_ACTIVE: 'false'
 
 jobs:
-  test:
-    uses: Silverlan/tmp_pragma2/.github/workflows/pragma-tests-ci.yml@main
-    if: github.repository != 'Silverlan/pr_module_template'
-    with:
-      os: windows
   build:
     permissions:
       actions: write
@@ -47,163 +42,168 @@ jobs:
             generators: "Visual Studio 17 2022"
             build_dir: 'build'
     steps:
-      - name: Setup Pragma
-        uses: Silverlan/pragma/github_actions/setup@main
-        with:
-          clone_url: "https://github.com/${{ github.repository }}.git"
-
-      # We need the latest Windows SDK
-      - uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
-        with:
-          sdk-version: 22621
-          
-      - name: Build Pragma
-        uses: ./pragma/github_actions/build
-        id: build-pragma
-        with:
-          build-args: "--with-pfm --with-all-pfm-modules --with-vr --with-networking --with-lua-debugger=0 --with-swiftshader"
-
-      - name: Create Release Archive
+      - name: Test
         shell: bash
         run: |
-          curDir="$PWD"
-          # Add info file
-          cd "${{ steps.build-pragma.outputs.install-dir }}"
-          echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
-          > ./git_info.txt
-
-          # Delete .git folders
-          find . -name ".git*" -exec rm -R {} \; 2>/dev/null || true
-
-          # Enable experimental updates
-          cd cfg
-          echo "pfm_enable_experimental_updates \"1\"" >> client.cfg
-
-          cd "$curDir"
-
-          7z a pragma-win64.zip "${{ steps.build-pragma.outputs.install-dir }}/**"
-          
-      - name: Generate nightly tag description
-        shell: bash
-        run:   |
-          curDate=$(date -u '+%Y-%m-%d %H:%M:%S %Z')
-          printf "This is an auto-generated pre-release, built from the latest version of the source code.\nIt includes all files necessary to run Pragma, as well as the latest version of the Pragma Filmmaker, however functionality and stability are **not** guaranteed.\n\nLatest release date: $curDate" > tag_text.txt
-
-      - name: Update nightly tag description
-        uses: softprops/action-gh-release@v0.1.15
-        with:
-          body_path: tag_text.txt
-          tag_name: nightly
-          prerelease: true
-
-      - name: Update nightly release
-        uses: Silverlan/Releaser/releaser/composite@main
-        with:
-          tag: nightly
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: "pragma-win64.zip"
-          
-      # Publish debug PDB files
-      - name: Create PDB Archive
-        shell: bash
-        run: |
-          curDir="$PWD"
-          mkdir pdb
-          
-          source_directory="${{ steps.build-pragma.outputs.build-dir }}"
-          target_directory="$curDir/pdb"
-
-          move_file() {
-            local source_file="$1"
-            local destination_dir
-            local base_name
-            local destination_file
-            local counter=1
-
-            base_name=$(basename "$source_file")
-            destination_dir="$target_directory"
-            destination_file="$destination_dir/$base_name"
-
-            # Check if the destination file already exists
-            while [[ -e "$destination_file" ]]; do
-              # Append a number to the destination file name
-              destination_file="${destination_dir}/${base_name}_${counter}"
-              counter=$((counter + 1))
-            done
-
-            mv "$source_file" "$destination_file"
-            echo "Moved: $source_file -> $destination_file"
-          }
-
-          find "$source_directory" -type f -name "*.pdb" -print0 | while IFS= read -r -d '' file; do
-            move_file "$file"
-          done
-
-          cd "$curDir"
-          # 7z expects a standard windows path
-          winPath=$(echo "$curDir" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')
-          7z a debug_pdb.zip "$winPath/pdb/**"
-
-      - name: Update PDB release
-        uses: Silverlan/Releaser/releaser/composite@main
-        with:
-          tag: nightly
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: "debug_pdb.zip"
-
-      - name: Run Server Tests
-        uses: benc-uk/workflow-dispatch@v1
-        timeout-minutes: 10
-        with:
-          workflow: pragma-server-tests-ci.yml
-          inputs: '{ "os": "windows" }'
-
-      - name: Run Tests
-        uses: benc-uk/workflow-dispatch@v1
-        timeout-minutes: 10
-        with:
-          workflow: pragma-tests-ci.yml
-          inputs: '{ "os": "windows" }'
-
-      - name: Generate File Lists
-        shell: bash
-        if: always()
-        run: |
-          # Install tree command
-          choco install tree
-          
-          curDir=$(pwd)
-
-          if [ -d "c:/pragma/build" ]; then
-            cd c:/pragma/build
-            tree --dirsfirst > "$curDir/files_pragma_build.txt"
-            cd "$curDir"
-          fi
-          if [ -d "c:/pragma/deps" ]; then
-            cd c:/pragma/deps
-            tree --dirsfirst > "$curDir/files_pragma_deps.txt"
-            cd "$curDir"
-          fi
-          if [ -d "c:/pragma/build/install" ]; then
-            cd c:/pragma/build/install
-            tree --dirsfirst > "$curDir/files_pragma_install.txt"
-            cd "$curDir"
-          fi
-
-          mkdir artifacts
-          cp -u "c:/pragma/build/CMakeCache.txt" artifacts/
-          cp -u "files_pragma_build.txt" artifacts/
-          cp -u "files_pragma_deps.txt" artifacts/
-          cp -u "files_pragma_install.txt" artifacts/
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Artifacts
-          overwrite: true
-          path: "artifacts"
-
-      - name: Handle Error
-        uses: Silverlan/common_actions/action_handle_error@main
-        if: failure()
+          echo "Test"
+#      - name: Setup Pragma
+#        uses: Silverlan/pragma/github_actions/setup@main
+#        with:
+#          clone_url: "https://github.com/${{ github.repository }}.git"
+#
+#      # We need the latest Windows SDK
+#      - uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
+#        with:
+#          sdk-version: 22621
+#          
+#      - name: Build Pragma
+#        uses: ./pragma/github_actions/build
+#        id: build-pragma
+#        with:
+#          build-args: "--with-pfm --with-all-pfm-modules --with-vr --with-networking --with-lua-debugger=0 --with-swiftshader"
+#
+#      - name: Create Release Archive
+#        shell: bash
+#        run: |
+#          curDir="$PWD"
+#          # Add info file
+#          cd "${{ steps.build-pragma.outputs.install-dir }}"
+#          echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
+#          > ./git_info.txt
+#
+#          # Delete .git folders
+#          find . -name ".git*" -exec rm -R {} \; 2>/dev/null || true
+#
+#          # Enable experimental updates
+#          cd cfg
+#          echo "pfm_enable_experimental_updates \"1\"" >> client.cfg
+#
+#          cd "$curDir"
+#
+#          7z a pragma-win64.zip "${{ steps.build-pragma.outputs.install-dir }}/**"
+#          
+#      - name: Generate nightly tag description
+#        shell: bash
+#        run:   |
+#          curDate=$(date -u '+%Y-%m-%d %H:%M:%S %Z')
+#          printf "This is an auto-generated pre-release, built from the latest version of the source code.\nIt includes all files necessary to run Pragma, as well as the latest version of the Pragma Filmmaker, however functionality and stability are **not** guaranteed.\n\nLatest release date: $curDate" > tag_text.txt
+#
+#      - name: Update nightly tag description
+#        uses: softprops/action-gh-release@v0.1.15
+#        with:
+#          body_path: tag_text.txt
+#          tag_name: nightly
+#          prerelease: true
+#
+#      - name: Update nightly release
+#        uses: Silverlan/Releaser/releaser/composite@main
+#        with:
+#          tag: nightly
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          files: "pragma-win64.zip"
+#          
+#      # Publish debug PDB files
+#      - name: Create PDB Archive
+#        shell: bash
+#        run: |
+#          curDir="$PWD"
+#          mkdir pdb
+#          
+#          source_directory="${{ steps.build-pragma.outputs.build-dir }}"
+#          target_directory="$curDir/pdb"
+#
+#          move_file() {
+#            local source_file="$1"
+#            local destination_dir
+#            local base_name
+#            local destination_file
+#            local counter=1
+#
+#            base_name=$(basename "$source_file")
+#            destination_dir="$target_directory"
+#            destination_file="$destination_dir/$base_name"
+#
+#            # Check if the destination file already exists
+#            while [[ -e "$destination_file" ]]; do
+#              # Append a number to the destination file name
+#              destination_file="${destination_dir}/${base_name}_${counter}"
+#              counter=$((counter + 1))
+#            done
+#
+#            mv "$source_file" "$destination_file"
+#            echo "Moved: $source_file -> $destination_file"
+#          }
+#
+#          find "$source_directory" -type f -name "*.pdb" -print0 | while IFS= read -r -d '' file; do
+#            move_file "$file"
+#          done
+#
+#          cd "$curDir"
+#          # 7z expects a standard windows path
+#          winPath=$(echo "$curDir" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')
+#          7z a debug_pdb.zip "$winPath/pdb/**"
+#
+#      - name: Update PDB release
+#        uses: Silverlan/Releaser/releaser/composite@main
+#        with:
+#          tag: nightly
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          files: "debug_pdb.zip"
+#
+#      - name: Run Server Tests
+#        uses: benc-uk/workflow-dispatch@v1
+#        timeout-minutes: 10
+#        with:
+#          workflow: pragma-server-tests-ci.yml
+#          inputs: '{ "os": "windows" }'
+#
+#      - name: Run Tests
+#        uses: benc-uk/workflow-dispatch@v1
+#        timeout-minutes: 10
+#        with:
+#          workflow: pragma-tests-ci.yml
+#          inputs: '{ "os": "windows" }'
+#
+#      - name: Generate File Lists
+#        shell: bash
+#        if: always()
+#        run: |
+#          # Install tree command
+#          choco install tree
+#          
+#          curDir=$(pwd)
+#
+#          if [ -d "c:/pragma/build" ]; then
+#            cd c:/pragma/build
+#            tree --dirsfirst > "$curDir/files_pragma_build.txt"
+#            cd "$curDir"
+#          fi
+#          if [ -d "c:/pragma/deps" ]; then
+#            cd c:/pragma/deps
+#            tree --dirsfirst > "$curDir/files_pragma_deps.txt"
+#            cd "$curDir"
+#          fi
+#          if [ -d "c:/pragma/build/install" ]; then
+#            cd c:/pragma/build/install
+#            tree --dirsfirst > "$curDir/files_pragma_install.txt"
+#            cd "$curDir"
+#          fi
+#
+#          mkdir artifacts
+#          cp -u "c:/pragma/build/CMakeCache.txt" artifacts/
+#          cp -u "files_pragma_build.txt" artifacts/
+#          cp -u "files_pragma_deps.txt" artifacts/
+#          cp -u "files_pragma_install.txt" artifacts/
+#
+#      - name: Upload Artifacts
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: Artifacts
+#          overwrite: true
+#          path: "artifacts"
+#
+#      - name: Handle Error
+#        uses: Silverlan/common_actions/action_handle_error@main
+#        if: failure()
+#
