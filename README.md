@@ -1,5 +1,6 @@
 [![Build Windows](https://github.com/Silverlan/pragma/actions/workflows/build-and-release-windows-clang.yml/badge.svg?branch=main)](https://github.com/Silverlan/pragma/actions/workflows/build-and-release-windows-clang.yml) [![Build Linux](https://github.com/Silverlan/pragma/actions/workflows/build-and-release-linux-clang.yml/badge.svg?branch=main)](https://github.com/Silverlan/pragma/actions/workflows/build-and-release-linux-clang.yml) [![License](https://img.shields.io/github/license/Silverlan/pragma)](#license)
 
+
 <img align="right" width="150" height="150" alt="Pragma Logo" title="Pragma Logo" src="https://wiki.pragma-engine.com/uploads/images/gallery/2022-09/scaled-1680-/pragma-logo-256.png">
 
 What is this?
