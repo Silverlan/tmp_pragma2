@@ -612,6 +612,7 @@ if platform == "linux":
 					"pkg-config",
 					"gperf"
 				]
+			commands.append("apt update")
 			commands.append("apt install " +" ".join(packages))
 		install_system_packages(commands, no_confirm)
 
